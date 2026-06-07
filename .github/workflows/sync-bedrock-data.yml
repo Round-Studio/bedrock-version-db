@@ -1,0 +1,52 @@
+name: 同步 Bedrock 数据
+
+on:
+  schedule:
+    # 每天 UTC 时间 00:00 执行（北京时间 08:00）
+    - cron: '0 0 * * *'
+  # 支持手动触发
+  workflow_dispatch:
+
+jobs:
+  sync-data:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      - name: 获取并同步数据
+        run: |
+          # 创建数据目录（如果不存在）
+          mkdir -p data
+          
+          # 使用 curl 请求数据，设置 User-Agent
+          curl -H "User-Agent: mcappx_developer" \
+               -o data/bedrock.json \
+               https://data.mcappx.com/v2/bedrock.json
+          
+          # 检查请求是否成功
+          if [ $? -ne 0 ]; then
+            echo "数据获取失败"
+            exit 1
+          fi
+          
+          # 添加时间戳信息（可选）
+          echo "同步时间: $(date -u '+%Y-%m-%d %H:%M:%S UTC')" > data/sync-info.txt
+          echo "数据来源: https://data.mcappx.com/v2/bedrock.json" >> data/sync-info.txt
+      
+      - name: 提交并推送变更
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          
+          # 添加变更文件
+          git add data/bedrock.json data/sync-info.txt
+          
+          # 检查是否有变更
+          if git diff --staged --quiet; then
+            echo "没有检测到数据变更"
+          else
+            git commit -m "chore: 自动同步 Bedrock 数据 - $(date -u '+%Y-%m-%d')"
+            git push
+          fi
