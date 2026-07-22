@@ -1,2 +1,2 @@
-同步时间: 2026-07-21 02:52:27 UTC
+同步时间: 2026-07-22 02:50:31 UTC
 数据来源: https://data.mcappx.com/v2/bedrock.json
